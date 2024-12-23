@@ -1,7 +1,7 @@
 plugins {
     application
-    id("org.springframework.boot") version "3.3.4"
-    id("io.spring.dependency-management") version "1.1.3"
+    id("org.springframework.boot") version "3.4.1"
+    id("io.spring.dependency-management") version "1.1.7"
     java
 }
 
@@ -31,8 +31,25 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:postgresql")
     testImplementation("io.rest-assured:rest-assured")
+    testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
 application {
     mainClass.set("com.sivalabs.bookmarks.Application") // Replace with your application's main class
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
+
+// to avoid error: Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build what is described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html#0.3
+val mockitoAgent = configurations.create("mockitoAgent")
+dependencies {
+    testImplementation("org.mockito:mockito-core:5.14.0")
+    mockitoAgent("org.mockito:mockito-core:5.14.0") { isTransitive = false }
+}
+tasks {
+    test {
+        jvmArgs("-javaagent:${mockitoAgent.asPath}")
+    }
 }
