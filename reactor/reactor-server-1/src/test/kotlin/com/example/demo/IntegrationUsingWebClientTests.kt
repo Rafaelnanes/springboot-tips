@@ -73,7 +73,7 @@ class IntegrationUsingWebClientTests {
     }
 
     @Test
-    fun `stream error`() {
+    fun `stream error 400`() {
         val body = """{"message":"My error"}""".trimIndent()
         stubFor(
             get(urlEqualTo("/stream"))
@@ -85,7 +85,6 @@ class IntegrationUsingWebClientTests {
 
         val eventFlux = webClient.get()
             .uri("/integration/stream")
-            .accept(MediaType.TEXT_EVENT_STREAM)
             .retrieve()
             .bodyToFlux(String::class.java)
 
@@ -93,7 +92,32 @@ class IntegrationUsingWebClientTests {
             .expectErrorMatches {
                 it is WebClientResponseException
                         && it.statusCode == HttpStatus.BAD_REQUEST
-                        && it.responseBodyAsString.contains("""{"value":"Integration error on status 400"}""")
+                        && it.responseBodyAsString == """{"value":"Integration error on status 400"}"""
+            }
+            .verify(Duration.ofSeconds(5))
+    }
+
+    @Test
+    fun `stream error 500`() {
+        val body = """{"message":"My error"}""".trimIndent()
+        stubFor(
+            get(urlEqualTo("/stream"))
+                .willReturn(
+                    status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                        .withBody(body)
+                )
+        )
+
+        val eventFlux = webClient.get()
+            .uri("/integration/stream")
+            .retrieve()
+            .bodyToFlux(String::class.java)
+
+        StepVerifier.create(eventFlux)
+            .expectErrorMatches {
+                it is WebClientResponseException
+                        && it.statusCode == HttpStatus.BAD_REQUEST
+                        && it.responseBodyAsString == """{"value":"Integration error on status 500"}"""
             }
             .verify(Duration.ofSeconds(5))
     }

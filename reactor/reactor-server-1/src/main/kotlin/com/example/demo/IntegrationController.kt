@@ -33,7 +33,7 @@ class IntegrationController {
 //            .onErrorComplete() // suppresses the exception by closing the stream
             .onErrorResume({ it !is MyInternalException }, {
                 println("onErrorResume: ${it.message}")
-                return@onErrorResume Flux.error(MyInternalException("Integration error"))
+                return@onErrorResume Flux.error(MyInternalException("Integration error on status 500"))
             })
     }
 
