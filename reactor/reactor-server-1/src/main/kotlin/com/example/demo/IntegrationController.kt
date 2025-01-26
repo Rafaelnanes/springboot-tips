@@ -14,8 +14,10 @@ class IntegrationController {
 
     @GetMapping("/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     fun stream(): Flux<EventMessage> {
-        return WebClient.create("http://localhost:8089/simple-error/case-6")
+//        return WebClient.create("http://localhost:8089/simple-error/case-1")
+        return WebClient.create("http://localhost:8089")
             .get()
+            .uri("/stream")
             .retrieve()
             .onStatus({ it.is4xxClientError }, {
                 println("onStatus: is4xxClientError")
