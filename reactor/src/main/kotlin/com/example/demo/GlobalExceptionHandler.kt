@@ -13,9 +13,12 @@ class GlobalExceptionHandler {
 //        return Mono.just(ResponseEntity.internalServerError().body("My Internal error"))
 //    }
 
-    @ExceptionHandler(RuntimeException::class)
-    fun handleUserNotFoundException(ex: RuntimeException): ResponseEntity<String> {
+    @ExceptionHandler(MyInternalException::class)
+    fun internalError(ex: MyInternalException): ResponseEntity<Response> {
         println("Stepping in exception handler: $ex")
-        return ResponseEntity.internalServerError().body("My Internal error")
+        val message: String = if (ex.message == null) "Unknown error" else ex.message.toString()
+        return ResponseEntity.badRequest().body(Response(message))
     }
+
+    class Response(val value: String)
 }

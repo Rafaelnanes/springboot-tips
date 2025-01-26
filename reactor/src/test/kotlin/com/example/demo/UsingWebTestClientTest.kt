@@ -5,6 +5,7 @@ import org.junit.jupiter.api.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerSentEvent
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -143,8 +144,9 @@ class UsingWebTestClientTest {
 
     @Nested
     inner class ErrorSuit {
+
         @Test
-        fun `verity assertion error stream`() {
+        fun `assertion error stream`() {
             val exception = assertThrows<AssertionError> {
                 val response = webTestClient.get()
                     .uri("/stream")
@@ -160,6 +162,20 @@ class UsingWebTestClientTest {
                     .verify()
             }
             Assertions.assertNotNull(exception)
+        }
+
+        @Disabled
+        @Test
+        fun `simple case 1`() {
+            webTestClient.get()
+                .uri("/simple-error/case-1")
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.BAD_REQUEST)
+                .expectBody()
+                .returnResult()
+                .responseBody
+                .contentToString() == ""
         }
 
     }

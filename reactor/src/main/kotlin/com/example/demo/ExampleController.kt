@@ -47,34 +47,85 @@ class ExampleController {
             }
     }
 
-    //    @GetMapping("/text-stream-error", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
-    @GetMapping("/text-stream-error")
-    fun getMessageError(): MutableList<EventMessage>? {
-        return getFluxWithInvalidObjects()
-            .map {
-                println("Map: $it")
-                if (it!!.id == null) {
-                    println("Found null")
-//                    throw RuntimeException("Missing id")
-//                    return@map EventMessage(id = "99", message = "myMessage99")
-                }
-                return@map it
+    @GetMapping("/simple-error/case-1", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    fun getMessageError(): Flux<EventMessage> {
+        if (true) {
+            throw MyInternalException("First")
+        }
+        return defaultFluxError()
+    }
+
+    @GetMapping("/simple-error/case-2", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    fun case2(): Flux<EventMessage> {
+        return defaultFluxError()
+            .onErrorContinue { ex, data ->
+                println("onErrorContinue: Ignoring event with missing id-> $data, error: $ex")
+                throw ex
             }
+            .onErrorResume {
+                println("onErrorResume")
+                return@onErrorResume Flux.empty()
+            }
+    }
+
+    @GetMapping("/simple-error/case-3", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    fun case3(): Flux<EventMessage> {
+        return defaultFluxError()
+            .onErrorContinue { ex, data ->
+                println("onErrorContinue: Ignoring event with missing id-> $data, error: $ex")
+                throw ex
+            }
+            .onErrorResume {
+                println("onErrorResume")
+                return@onErrorResume Flux.just(EventMessage())
+            }
+    }
+
+    @GetMapping("/simple-error/case-4", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    fun case4(): Flux<EventMessage> {
+        return defaultFluxError()
             .onErrorContinue { ex, data ->
                 println("onErrorContinue: Ignoring event with missing id-> $data, error: $ex")
 //                throw ex
             }
+            .onErrorResume {
+                // won't be printed
+                println("onErrorResume")
+                return@onErrorResume Flux.just(EventMessage())
+            }
+    }
+
+    @GetMapping("/simple-error/case-5", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    fun case5(): Flux<EventMessage> {
+        return defaultFluxError()
             .doOnError {
                 println("doOnError")
-//                throw RuntimeException("doOnError")
+                throw MyInternalException("doOnError")
             }
-//            .onErrorResume {
-//                println("onErrorResume")
-////                Flux.empty<EventMessage>()
-//                Flux.error(it) // Relança a exceção
-//            }
-            .collectList()
-            .block()
+            .onErrorResume {
+                println("onErrorResume")
+                return@onErrorResume Flux.just(EventMessage())
+            }
+    }
+
+    @GetMapping("/simple-error/case-6", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    fun case6(): Flux<EventMessage> {
+        return defaultFluxError()
+            .onErrorResume {
+                println("onErrorResume")
+                return@onErrorResume Flux.error(it)
+            }
+    }
+
+    private fun defaultFluxError(): Flux<EventMessage> {
+        val flux = getFluxWithInvalidObjects()
+            .map {
+                if (it!!.id == null) {
+                    throw MyInternalException("Missing id")
+                }
+                return@map it
+            }
+        return flux
     }
 
     private fun getFluxWithInvalidObjects() = Flux.just(
